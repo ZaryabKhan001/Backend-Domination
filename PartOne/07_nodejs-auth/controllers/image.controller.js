@@ -1,5 +1,9 @@
+import mongoose from 'mongoose';
 import Image from '../models/image.model.js';
-import { uploadToCloudinary } from '../services/cloudinaryService.js';
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from '../services/cloudinaryService.js';
 import fs from 'fs';
 
 export const handleUploadImage = async (req, res) => {
@@ -78,5 +82,68 @@ export const handleFetchImages = async (req, res) => {
 
 export const handleDeleteImage = async (req, res) => {
   try {
-  } catch (error) {}
+    const { id } = req.params;
+    const user = req.user;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'imageId is required',
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid imageId format',
+      });
+    }
+
+    const imageDetails = await Image.findById(id);
+
+    if (!imageDetails) {
+      return res.status(404).json({
+        success: false,
+        message: 'Image not found',
+      });
+    }
+
+    const publicId = imageDetails.publicId;
+    const isUserAuthorized = imageDetails.uploadedBy.toString() == user.userId;
+
+    if (!isUserAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied, Only Creator is able to delete the image',
+      });
+    }
+
+    const isImageDeletedFromCloudinary = await deleteFromCloudinary(publicId);
+
+    if (!isImageDeletedFromCloudinary) {
+      return res.status(502).json({
+        success: false,
+        message: 'Image deletion failed from cloudinary',
+      });
+    }
+
+    const isImageDeleteFromDB = await Image.findByIdAndDelete(id);
+
+    if (!isImageDeleteFromDB) {
+      return res.status(500).json({
+        success: false,
+        message: 'Image deletion failed from DB',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Image deleted Successfully',
+    });
+  } catch (error) {
+    console.log('Image deletion failed', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Image deletion failed',
+    });
+  }
 };

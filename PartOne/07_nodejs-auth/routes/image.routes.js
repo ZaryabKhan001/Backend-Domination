@@ -16,6 +16,6 @@ router.post(
   handleUploadImage
 );
 router.get('/all-images', checkAuth, handleFetchImages);
-router.delete('/delete', checkAuth, checkIsAdmin, handleDeleteImage);
+router.delete('/delete/:id', checkAuth, checkIsAdmin, handleDeleteImage);
 
 export default router;

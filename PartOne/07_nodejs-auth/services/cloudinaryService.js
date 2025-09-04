@@ -17,3 +17,16 @@ export const uploadToCloudinary = async (filePath) => {
     throw new Error(error);
   }
 };
+
+export const deleteFromCloudinary = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    if (result?.result === 'ok') {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    throw new Error(error);
+  }
+};
