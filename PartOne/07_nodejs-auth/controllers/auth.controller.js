@@ -103,3 +103,76 @@ export const handleLoginUser = async (req, res) => {
     });
   }
 };
+
+export const handleChangePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both old and new password are required',
+      });
+    }
+    if (oldPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from old password',
+      });
+    }
+
+    const { userId } = req.user;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const isOldPasswordCorrect = await bcrypt.compare(
+      oldPassword,
+      user.password
+    );
+
+    if (!isOldPasswordCorrect) {
+      return res.status(400).json({
+        success: false,
+        message: 'Old Password is Incorrect',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newHashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const newUser = await User.findByIdAndUpdate(
+      user._id,
+      { password: newHashedPassword },
+      { new: true }
+    );
+
+    if (!newUser) {
+      return res.status(503).json({
+        success: false,
+        message: 'Unable to update password',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password Changed Successfully',
+      data: {
+        ...newUser._doc,
+        password: undefined,
+      },
+    });
+  } catch (error) {
+    console.log('Password changed failed', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Password changed failed',
+    });
+  }
+};
