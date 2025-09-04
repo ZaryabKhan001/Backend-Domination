@@ -57,7 +57,19 @@ export const handleUploadImage = async (req, res) => {
 
 export const handleFetchImages = async (req, res) => {
   try {
-    const images = await Image.find({});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    const sortBy = req.query.sortedBy || 'createdAt';
+    const sortOrder = req.query.sortedOrder === 'asc' ? 1 : -1;
+
+    const totalImages = await Image.countDocuments();
+    const totalPages = Math.ceil(totalImages / limit);
+
+    const images = await Image.find()
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
 
     if (!images) {
       return res.status(404).json({
@@ -69,7 +81,11 @@ export const handleFetchImages = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Images Fetched Successfully',
-      data: images,
+      data: {
+        currentPage: page,
+        totalPages: totalPages,
+        images: images,
+      },
     });
   } catch (error) {
     console.log('Images Fetching Failed', error);
