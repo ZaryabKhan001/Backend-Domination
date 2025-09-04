@@ -2,23 +2,23 @@ import { Schema, model } from 'mongoose';
 
 const userModel = new Schema({
   username: {
-    type: 'String',
+    type: String,
     unique: true,
     trim: true,
     required: true,
   },
   email: {
-    type: 'String',
+    type: String,
     unique: true,
     trim: true,
     required: true,
   },
   password: {
-    type: 'String',
+    type: String,
     required: true,
   },
   role: {
-    type: 'String',
+    type: String,
     enum: ['user', 'admin'],
     default: 'user',
   },

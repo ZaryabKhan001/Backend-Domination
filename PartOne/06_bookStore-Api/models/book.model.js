@@ -3,13 +3,13 @@ import { Schema, model } from 'mongoose';
 const bookSchema = new Schema(
   {
     title: {
-      type: 'String',
+      type: String,
       required: true,
       trim: true,
       maxLength: [100, 'Book Title cannot be more than 100 characters'],
     },
     author: {
-      type: 'string',
+      type: String,
       required: [true, 'Book Author is required'],
     },
     year: {

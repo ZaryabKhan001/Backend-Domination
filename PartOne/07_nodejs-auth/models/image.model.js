@@ -3,11 +3,11 @@ import mongoose, { Schema, model } from 'mongoose';
 const imageSchema = new Schema(
   {
     imageUrl: {
-      type: 'String',
+      type: String,
       required: true,
     },
     publicId: {
-      type: 'String',
+      type: String,
       required: true,
     },
     uploadedBy: {
