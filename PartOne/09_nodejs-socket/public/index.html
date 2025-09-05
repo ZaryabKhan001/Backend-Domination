@@ -50,7 +50,7 @@
 
       // listening to new Messages
       socket.on('newMessage', (data) => {
-        addMessage(data.message);
+        addMessage(`${data.userName}: ${data.message}`);
       });
 
       // handle Message Input
