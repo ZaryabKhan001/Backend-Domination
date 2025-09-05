@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat App</title>
+  </head>
+  <body>
+    <div>
+      <h3>Online Users:</h3>
+      <ul id="user-list"></ul>
+    </div>
+    <div id="chat"></div>
+    <form id="message-form">
+      <input
+        type="text"
+        id="message-input"
+        placeholder="Enter your message"
+        required
+      />
+      <button type="submit">Send</button>
+    </form>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const userList = document.getElementById('user-list');
+      const messageForm = document.getElementById('message-form');
+      const messageInput = document.getElementById('message-input');
+      const chat = document.getElementById('chat');
+      const userName = prompt('Enter Your Name');
+
+      // raise joining
+      socket.emit('join', userName);
+
+      // listen to joining (everyone's)
+      socket.on('userJoin', (userName) => {
+        addMessage(`User Joined: ${userName}`);
+      });
+
+      // listen to leaving (everyone's)
+      socket.on('userLeave', (userName) => {
+        addMessage(`User Leaves: ${userName}`);
+      });
+
+      // listen to user's list
+      socket.on('userList', (users) => {
+        usersList.innerHTML = users.map((user) => `<li>${user}</li>`).join('');
+      });
+
+
+      // listening to new Messages
+      socket.on('newMessage', (data) => {
+        addMessage(data.message);
+      });
+
+      // handle Message Input
+      messageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const extractMessageInfo = messageInput.value.trim();
+        if (extractMessageInfo) {
+          socket.emit('chatMessage', {
+            userName: userName,
+            message: extractMessageInfo,
+          });
+        }
+        messageInput.value = ""
+      });
+
+      // helper function for adding message
+      function addMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        chat.appendChild(messageElement);
+        chat.scrollTop = chat.scrollHeight;
+      }
+    </script>
+  </body>
+</html>
