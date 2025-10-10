@@ -19,3 +19,14 @@ export const headerVersioning = (version) => (req, res, next) => {
     });
   }
 };
+export const contentTypeVersioning = (version) => (req, res, next) => {
+  const contentType = req.get('Content-Type');
+  if (contentType.includes(`application/vnd.api.${version}+json`)) {
+    next();
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: 'Api Version is not Supported',
+    });
+  }
+};
