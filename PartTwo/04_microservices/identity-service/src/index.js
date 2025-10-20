@@ -62,6 +62,10 @@ app.listen(port, () => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection on', promise, 'with reason:', reason);
-  process.exit(1); 
+  logger.error(
+    `Unhandled Rejection at: ${promise}, reason: ${
+      reason instanceof Error ? reason.stack : JSON.stringify(reason)
+    }`
+  );
+  process.exit(1);
 });
