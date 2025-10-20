@@ -3,7 +3,7 @@ import { RedisStore } from 'rate-limit-redis';
 import { redisClient } from '../config/redis.config.js';
 
 export const rateLimiter = (maxRequests, duration) => {
-  return new rateLimit({
+  return rateLimit({
     limit: maxRequests,
     windowMs: duration,
     message: 'Too many requests, please try again later',
@@ -17,7 +17,7 @@ export const rateLimiter = (maxRequests, duration) => {
       });
     },
     store: new RedisStore({
-      sendCommand: (...args) => redisClient.sendCommand(args),
+      sendCommand: (...args) => redisClient.call(...args),
     }),
   });
 };

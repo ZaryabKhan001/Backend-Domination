@@ -18,7 +18,7 @@ export const routeRateLimiter = (maxRequests, duration) => {
       });
     },
     store: new RedisStore({
-      sendCommand: (...args) => redisClient.sendCommand(args),
+      sendCommand: (...args) => redisClient.call(...args),
     }),
   });
 };
