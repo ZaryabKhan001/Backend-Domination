@@ -1,4 +1,4 @@
-import logger from '../utils/logger.js';
+import { logger } from '../utils/logger.js';
 
 export const globalErrorHandler = async (err, req, res, next) => {
   logger.error(err.stack);
