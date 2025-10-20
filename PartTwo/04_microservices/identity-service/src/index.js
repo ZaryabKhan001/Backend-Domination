@@ -13,7 +13,7 @@ import authRouter from './routes/identityService.route.js';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || process.env.BACKUP_PORT;
+const port = process.env.PORT;
 
 connectDb();
 
