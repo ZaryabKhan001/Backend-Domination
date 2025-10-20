@@ -49,7 +49,7 @@ app.use((req, res, next) => {
 });
 
 //? Endpoints rate limiting
-app.use('/api/auth/register', routeRateLimiter);
+app.use('/api/auth/register', routeRateLimiter(50, 15 * 60 * 100));
 
 //? Routes
 app.use('/api/auth', authRouter);
