@@ -14,3 +14,15 @@ export const validateRegistration = (data) => {
 
   return schema.validate(data);
 };
+
+export const validateLogin = (data) => {
+  const schema = Joi.object({
+    email: Joi.string().email({
+      minDomainSegments: 2,
+      tlds: { allow: ['com', 'net', 'io', 'org'] },
+    }),
+
+    password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
+  });
+  return schema.validate(data);
+};

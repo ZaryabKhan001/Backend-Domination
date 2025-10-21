@@ -8,19 +8,18 @@ export const generateTokens = async (user) => {
     const accessToken = jwt.sign(
       { userId: user._id, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: '10m' }
+      { expiresIn: '60m' }
     );
 
     const refreshToken = crypto.randomBytes(40).toString('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 1); // refresh token expires after 1 day
 
-    await RefreshToken.create({
-      user: user._id,
-      token: refreshToken,
-      expiresAt: expiresAt,
-    });
-
+    await RefreshToken.findOneAndUpdate(
+      { user: user._id },
+      { token: refreshToken, expiresAt },
+      { upsert: true, new: true }
+    );
     return { accessToken, refreshToken };
   } catch (error) {
     logger.error('Token generation Failed', { error });
