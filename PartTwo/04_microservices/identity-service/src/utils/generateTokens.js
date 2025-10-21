@@ -23,7 +23,7 @@ export const generateTokens = async (user) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    logger.error('Token generation Failed', { error });
+    logger.error('Token generation Failed', error);
     throw new Error(error);
   }
 };

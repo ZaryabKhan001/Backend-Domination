@@ -58,7 +58,7 @@ export const handleRegistration = async (req, res) => {
       refreshToken: refreshToken,
     });
   } catch (error) {
-    logger.error('User Registration Failed! Something went wrong', { error });
+    logger.error('User Registration Failed! Something went wrong', error);
     return res.status(500).json({
       success: false,
       message:
