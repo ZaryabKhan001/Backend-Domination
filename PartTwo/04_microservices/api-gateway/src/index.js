@@ -4,7 +4,8 @@ import { corsConfig } from './config/cors.config.js';
 import helmet from 'helmet';
 import { globalErrorHandler } from './middleware/error.middleware.js';
 import { rateLimiter } from './middleware/rateLimiting.middleware.js';
-import proxy from 'express-http-proxy';
+import { verifyToken, validateToken } from './middleware/auth.middleware.js';
+import { setupProxy } from './utils/setupProxy.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -25,38 +26,19 @@ app.use((req, res, next) => {
   next();
 });
 
-//? Proxy
-const proxyOptions = {
-  proxyReqPathResolver: (req) => {
-    return req.originalUrl.replace(/^\/v1/, '/api');
-  },
-  proxyErrorHandler: (err, res, next) => {
-    logger.error(`Proxy Error: ${err.message}`);
-    res.status(500).json({
-      success: false,
-      message: `Internal Server Error, Error: ${err.message}`,
-    });
-  },
-};
-
 //? Setting up proxy for identity service
-app.use(
+setupProxy(
+  app,
   '/v1/auth',
-  proxy(process.env.IDENTITY_SERVICE_URL, {
-    ...proxyOptions,
-    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers['Content-Type'] = 'application/json';
-      return proxyReqOpts;
-    },
-    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-      logger.info(
-        `Response received from Identity service: ${proxyRes.statusCode}`
-      );
-
-      return proxyResData;
-    },
-  })
+  process.env.IDENTITY_SERVICE_URL,
+  'identity-service'
 );
+
+//? Setting up proxy for post service
+setupProxy(app, '/v1/post', process.env.POST_SERVICE_URL, 'post-service', [
+  validateToken,
+  verifyToken,
+]);
 
 //? Error Handler
 app.use(globalErrorHandler);
@@ -65,6 +47,9 @@ app.listen(port, () => {
   logger.info(`Api gateway is running on Port: ${port}`);
   logger.info(
     `Identity Service is running on Port: ${process.env.IDENTITY_SERVICE_URL}`
+  );
+  logger.info(
+    `Post Service is running on Port: ${process.env.POST_SERVICE_URL}`
   );
   logger.info(`Redis Url: ${process.env.REDIS_URL}`);
 });
