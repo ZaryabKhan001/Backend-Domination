@@ -40,6 +40,12 @@ setupProxy(app, '/v1/post', process.env.POST_SERVICE_URL, 'post-service', [
   verifyToken,
 ]);
 
+//? Setting up proxy for media service
+setupProxy(app, '/v1/media', process.env.MEDIA_SERVICE_URL, 'media-service', [
+  validateToken,
+  verifyToken,
+]);
+
 //? Error Handler
 app.use(globalErrorHandler);
 
