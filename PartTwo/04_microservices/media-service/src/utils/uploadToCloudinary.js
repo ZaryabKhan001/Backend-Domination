@@ -1,9 +1,9 @@
 import { cloudinary } from '../config/cloudinary.config.js';
 
-export const upoadToCloudinary = async (file) => {
+export const uploadToCloudinary = async (file) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { resource_type: 'auto' },
+      { resource_type: 'auto', folder: 'microservices-socialMedia' },
       (error, uploadResult) => {
         if (error) {
           return reject(error);

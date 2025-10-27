@@ -1,5 +1,5 @@
-export const v = (req, res, next) => {
-  const userId = req.headers.get['x-user-id'];
+export const checkAuthentication = (req, res, next) => {
+  const userId = req.headers['x-user-id'];
   if (!userId) {
     logger.warn('Attempting Without Authentication');
     return res.status(400).json({
