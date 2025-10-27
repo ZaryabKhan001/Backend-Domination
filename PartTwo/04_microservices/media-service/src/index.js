@@ -5,21 +5,27 @@ import { corsConfig } from './config/cors.config.js';
 import { globalErrorHandler } from './middlewares/errorHandler.middleware.js';
 import mediaRouter from './routes/media.routes.js';
 import helmet from 'helmet';
+import { connectDb } from './database/connectDb.js';
+import { rateLimiter } from './middlewares/rateLimiter.middleware.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
 
+connectDb();
+
 app.use(helmet());
 app.use(corsConfig());
 app.use(express.json());
 
 app.use((req, res, next) => {
-  logger.info(`Received ${req.method} request for ${req.url}`);
-  logger.info(`Request body ${req.body}`);
+  logger.info(`Received ${req?.method} request for ${req?.url}`);
   next();
 });
+
+// Route based rate limiting
+app.use('/api/media/upload', rateLimiter(1 * 60 * 100, 25));
 
 //? Routes
 app.use('/api/media', mediaRouter);
