@@ -8,6 +8,7 @@ import { globalErrorHandler } from './middlewares/errorHandler.middleware.js';
 import postRouter from './routes/post.route.js';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { redisClient } from './config/redis.config.js';
+import { connectRabbitMQ } from './utils/rabbitmq.js';
 
 dotenv.config();
 
@@ -53,9 +54,18 @@ app.use('/api/post', postRouter);
 //? Error Handling
 app.use(globalErrorHandler);
 
-app.listen(port, () => {
-  logger.info(`Post Service is running on Port: ${port}`);
-});
+const startServer = async () => {
+  try {
+    await connectRabbitMQ();
+    app.listen(port, () => {
+      logger.info(`Post Service is running on Port: ${port}`);
+    });
+  } catch (error) {
+    logger.error('Error in Starting Server', error);
+    process.exit(1);
+  }
+};
+startServer();
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error(
