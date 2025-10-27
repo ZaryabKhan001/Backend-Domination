@@ -22,7 +22,7 @@ app.use(rateLimiter(100, 15 * 60 * 100));
 
 app.use((req, res, next) => {
   logger.info(`Received ${req.method} request for ${req.url}`);
-  logger.info(`Request body ${req.body}`);
+  req.body && logger.info(`Request body ${req.body}`);
   next();
 });
 
@@ -41,10 +41,14 @@ setupProxy(app, '/v1/post', process.env.POST_SERVICE_URL, 'post-service', [
 ]);
 
 //? Setting up proxy for media service
-setupProxy(app, '/v1/media', process.env.MEDIA_SERVICE_URL, 'media-service', [
-  validateToken,
-  verifyToken,
-]);
+setupProxy(
+  app,
+  '/v1/media',
+  process.env.MEDIA_SERVICE_URL,
+  'media-service',
+  [validateToken, verifyToken],
+  false
+);
 
 //? Error Handler
 app.use(globalErrorHandler);
@@ -56,6 +60,9 @@ app.listen(port, () => {
   );
   logger.info(
     `Post Service is running on Port: ${process.env.POST_SERVICE_URL}`
+  );
+  logger.info(
+    `Media Service is running on Port: ${process.env.MEDIA_SERVICE_URL}`
   );
   logger.info(`Redis Url: ${process.env.REDIS_URL}`);
 });

@@ -27,7 +27,6 @@ export const validateToken = (req, res, next) => {
 
 export const verifyToken = (req, res, next) => {
   const token = req.token;
-  console.log(token);
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

@@ -6,7 +6,8 @@ export const setupProxy = (
   route,
   target,
   serviceName,
-  middlewares = []
+  middlewares = [],
+  parseReqBody = true
 ) => {
   const proxyOptions = {
     proxyReqPathResolver: (req) => req.originalUrl.replace(/^\/v1/, '/api'),
@@ -20,9 +21,11 @@ export const setupProxy = (
     },
 
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers['Content-Type'] = 'application/json';
       if (srcReq.user) {
         proxyReqOpts.headers['x-user-id'] = srcReq.user.userId;
+      }
+      if (!srcReq.headers['content-type']?.startsWith('multipart/form-data')) {
+        proxyReqOpts.headers['Content-Type'] = 'application/json';
       }
       return proxyReqOpts;
     },
@@ -33,6 +36,7 @@ export const setupProxy = (
       );
       return proxyResData;
     },
+    parseReqBody,
   };
 
   app.use(route, ...middlewares, proxy(target, proxyOptions));
