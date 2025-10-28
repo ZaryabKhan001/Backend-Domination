@@ -31,6 +31,8 @@ export const connectRabbitMQ = async () => {
     });
 
     // Gracefully shutting down
+    // SIGINT => ctrc+c
+    // SIGTERM => closed by docker
     ['SIGINT', 'SIGTERM'].forEach((signal) => {
       process.on(signal, async () => {
         try {
