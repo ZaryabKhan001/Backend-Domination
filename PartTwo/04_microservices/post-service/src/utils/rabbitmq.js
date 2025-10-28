@@ -15,7 +15,7 @@ export const connectRabbitMQ = async () => {
     channel = await connection.createChannel();
     logger.info('Channel Created');
 
-    await channel.assertExchange(EXCHANGE_NAME, 'fanout', { durable: true });
+    await channel.assertExchange(EXCHANGE_NAME, 'topic', { durable: true });
 
     // reconnecting on closing
     connection.on('close', () => {
@@ -54,4 +54,17 @@ export const connectRabbitMQ = async () => {
   } catch (error) {
     logger.error('Failed to connect to RabbitMQ');
   }
+};
+
+export const publishEvent = async (routingKey, message) => {
+  if (!channel) {
+    await connectRabbitMQ();
+  }
+  channel.publish(
+    EXCHANGE_NAME,
+    routingKey,
+    Buffer.from(JSON.stringify(message)),
+     { persistent: true }
+  );
+  logger.info(`${routingKey}: Event published`);
 };

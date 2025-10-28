@@ -4,6 +4,7 @@ import { validateCreatePost } from '../utils/validations.js';
 import { redisClient } from '../config/redis.config.js';
 import { invalidateCache } from '../utils/invalidateCache.js';
 import { redisKeys } from '../utils/redisKeys.js';
+import { publishEvent } from '../utils/rabbitmq.js';
 
 export const handleCreatePost = async (req, res) => {
   logger.info('Post Creation Endpoint hit');
@@ -150,6 +151,13 @@ export const handleDeletePost = async (req, res) => {
 
     logger.info('Post Deleted Successfully.');
 
+    //? Delete media event publishing
+    publishEvent('post.deleted', {
+      postId: postId,
+      userId: req.user.userId,
+      mediaIds: deletedPost.mediaIds,
+    });
+
     const postKey = redisKeys.GET_POST(postId);
     const postsKeys = await redisClient.keys('posts:*');
 
@@ -158,6 +166,7 @@ export const handleDeletePost = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Post Deleted Successfully.',
+      post: deletedPost,
     });
   } catch (error) {
     logger.error('Post Deletion Failed!', error);
