@@ -7,6 +7,8 @@ import mediaRouter from './routes/media.routes.js';
 import helmet from 'helmet';
 import { connectDb } from './database/connectDb.js';
 import { rateLimiter } from './middlewares/rateLimiter.middleware.js';
+import { connectRabbitMQ, consumeEvent } from './utils/rabbitmq.js';
+import { handleDeleteMedia } from './events/media.events.js';
 
 dotenv.config();
 
@@ -33,9 +35,22 @@ app.use('/api/media', mediaRouter);
 //? global Error Handler
 app.use(globalErrorHandler);
 
-app.listen(port, () => {
-  logger.info(`Media Service is running on Port: ${port}`);
-});
+const startServer = async () => {
+  try {
+    await connectRabbitMQ();
+
+    //? consume events
+    await consumeEvent('post.deleted', handleDeleteMedia);
+
+    app.listen(port, () => {
+      logger.info(`Media Service is running on Port: ${port}`);
+    });
+  } catch (error) {
+    logger.error('Error in Starting Server', error);
+    process.exit(1);
+  }
+};
+startServer();
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error(
