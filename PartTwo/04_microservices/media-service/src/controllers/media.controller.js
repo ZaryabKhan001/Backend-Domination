@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger.js';
 import Media from '../models/media.model.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import { uploadToCloudinary, generateSignature } from '../utils/cloudinary.js';
 
 export const handleUploadMedia = async (req, res) => {
   logger.info('Upload Media Endpoint hit');
@@ -48,7 +48,7 @@ export const handleUploadMedia = async (req, res) => {
 export const handleGetAllMedia = async (req, res) => {
   try {
     const allMedia = await Media.find({});
-    return res.status(520).json({
+    return res.status(200).json({
       success: true,
       message: 'Fetched all Media Successfully',
       allMedia,
@@ -62,4 +62,22 @@ export const handleGetAllMedia = async (req, res) => {
   }
 };
 
-export const handleDeleteMedia = async (req, res) => {};
+export const handleGenerateSignature = async (req, res) => {
+  logger.info('Generate Signature Endpoint hit');
+  try {
+    const { timestamp, signature, folder } = await generateSignature();
+    return res.status(200).json({
+      success: true,
+      message: 'Signature Created Successfully',
+      signature: signature,
+      timestamp: timestamp,
+      folder: folder,
+    });
+  } catch (error) {
+    logger.error('Signature Generation Failed!', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Signature Generation Failed!',
+    });
+  }
+};
