@@ -27,3 +27,18 @@ export const deleteFromCloudinary = async (publicId) => {
     throw error;
   }
 };
+
+export const generateSignature = async () => {
+  const timestamp = Math.round(new Date().getTime() / 1000);
+  const folder = 'microservices-socialMedia';
+
+  const signature = cloudinary.utils.api_sign_request(
+    {
+      timestamp: timestamp,
+      folder,
+    },
+    process.env.CLOUDINARY_API_SECRET
+  );
+
+  return { timestamp, signature, folder };
+};
