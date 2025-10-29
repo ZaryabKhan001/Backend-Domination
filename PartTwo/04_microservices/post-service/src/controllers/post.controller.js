@@ -30,6 +30,13 @@ export const handleCreatePost = async (req, res) => {
       mediaIds: mediaIds || [],
     });
 
+    //? create post event publishing
+    await publishEvent('post.created', {
+      postId: newlyCreatedPost._id,
+      userId: newlyCreatedPost.user,
+      content: content,
+    });
+
     const keys = await redisClient.keys(`posts:*`);
     if (keys.length) {
       await invalidateCache(keys);

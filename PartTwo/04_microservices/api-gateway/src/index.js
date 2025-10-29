@@ -50,6 +50,15 @@ setupProxy(
   false
 );
 
+//? Setting up proxy for search service
+setupProxy(
+  app,
+  '/v1/search',
+  process.env.SEARCH_SERVICE_URL,
+  'search-service',
+  [validateToken, verifyToken],
+);
+
 //? Error Handler
 app.use(globalErrorHandler);
 
@@ -63,6 +72,9 @@ app.listen(port, () => {
   );
   logger.info(
     `Media Service is running on Port: ${process.env.MEDIA_SERVICE_URL}`
+  );
+    logger.info(
+    `Search Service is running on Port: ${process.env.SEARCH_SERVICE_URL}`
   );
   logger.info(`Redis Url: ${process.env.REDIS_URL}`);
 });
