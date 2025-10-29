@@ -4,11 +4,17 @@ import dotenv from 'dotenv';
 import { logger } from './utils/logger.js';
 import { corsConfig } from './config/cors.config.js';
 import { globalErrorHandler } from './middlewares/error.middleware.js';
+import postSearchRouter from './routes/postSearch.route.js';
+import { dbConnect } from './database/dbConnect.js';
+import { connectRabbitMQ, consumeEvent } from './utils/rabbitmq.js';
+import {handleCreatePost, handleDeletePost} from "./events/post.events.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
+
+dbConnect();
 
 app.use(helmet());
 app.use(corsConfig());
@@ -19,12 +25,22 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api/search', postSearchRouter);
+
 //? Error Handling
 app.use(globalErrorHandler);
 
-app.listen(port, () => {
-  logger.info(`Search service is running on Port:${port}`);
-});
+const startServer = async () => {
+  await connectRabbitMQ();
+
+  await consumeEvent('post_search_created_queue','post.created', handleCreatePost);
+  await consumeEvent('post_search_deleted_queue','post.deleted', handleDeletePost);
+
+  app.listen(port, () => {
+    logger.info(`Search service is running on Port:${port}`);
+  });
+};
+startServer();
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error(
