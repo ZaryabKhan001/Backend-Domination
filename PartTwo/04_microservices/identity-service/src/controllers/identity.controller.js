@@ -13,7 +13,7 @@ export const handleRegistration = async (req, res) => {
 
     if (error) {
       logger.warn(
-        'User Registration Failed! Validation Error',
+        'User Registration Failed! Validation Error: ' +
         error.details[0].message
       );
       return res.status(400).json({
@@ -77,7 +77,7 @@ export const handleLogin = async (req, res) => {
     const { error } = validateLogin(req.body);
     if (error) {
       logger.warn(
-        'User Login Failed! Validation Error',
+        'User Login Failed! Validation Error: ' +
         error.details[0].message
       );
       return res.status(500).json({

@@ -47,7 +47,6 @@ setupProxy(
   process.env.MEDIA_SERVICE_URL,
   'media-service',
   [validateToken, verifyToken],
-  false
 );
 
 //? Setting up proxy for search service
@@ -73,7 +72,7 @@ app.listen(port, () => {
   logger.info(
     `Media Service is running on Port: ${process.env.MEDIA_SERVICE_URL}`
   );
-    logger.info(
+  logger.info(
     `Search Service is running on Port: ${process.env.SEARCH_SERVICE_URL}`
   );
   logger.info(`Redis Url: ${process.env.REDIS_URL}`);

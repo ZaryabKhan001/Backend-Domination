@@ -7,7 +7,7 @@ import { globalErrorHandler } from './middlewares/error.middleware.js';
 import postSearchRouter from './routes/postSearch.route.js';
 import { dbConnect } from './database/dbConnect.js';
 import { connectRabbitMQ, consumeEvent } from './utils/rabbitmq.js';
-import {handleCreatePost, handleDeletePost} from "./events/post.events.js";
+import { handleCreatePost, handleDeletePost } from './events/post.events.js';
 
 dotenv.config();
 
@@ -31,14 +31,27 @@ app.use('/api/search', postSearchRouter);
 app.use(globalErrorHandler);
 
 const startServer = async () => {
-  await connectRabbitMQ();
+  try {
+    await connectRabbitMQ();
 
-  await consumeEvent('post_search_created_queue','post.created', handleCreatePost);
-  await consumeEvent('post_search_deleted_queue','post.deleted', handleDeletePost);
+    await consumeEvent(
+      'post_search_created_queue',
+      'post.created',
+      handleCreatePost
+    );
+    await consumeEvent(
+      'post_search_deleted_queue',
+      'post.deleted',
+      handleDeletePost
+    );
 
-  app.listen(port, () => {
-    logger.info(`Search service is running on Port:${port}`);
-  });
+    app.listen(port, () => {
+      logger.info(`Search service is running on Port:${port}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start Search Service');
+    process.exit(1);
+  }
 };
 startServer();
 
