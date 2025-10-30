@@ -1,5 +1,6 @@
 import proxy from 'express-http-proxy';
 import { logger } from './logger.js';
+import {shouldParseJson} from "./checkParsing.js"
 
 export const setupProxy = (
   app,
@@ -7,7 +8,6 @@ export const setupProxy = (
   target,
   serviceName,
   middlewares = [],
-  parseReqBody = true
 ) => {
   const proxyOptions = {
     proxyReqPathResolver: (req) => req.originalUrl.replace(/^\/v1/, '/api'),
@@ -24,10 +24,17 @@ export const setupProxy = (
       if (srcReq.user) {
         proxyReqOpts.headers['x-user-id'] = srcReq.user.userId;
       }
-      if (!srcReq.headers['content-type']?.startsWith('multipart/form-data')) {
+      if (shouldParseJson(srcReq)) {
         proxyReqOpts.headers['Content-Type'] = 'application/json';
       }
       return proxyReqOpts;
+    },
+
+    proxyReqBodyDecorator: (bodyContent, srcReq) => {
+      if (shouldParseJson(srcReq)) {
+        return JSON.stringify(srcReq.body || {});
+      }
+      return bodyContent;
     },
 
     userResDecorator: (proxyRes, proxyResData) => {
@@ -36,7 +43,7 @@ export const setupProxy = (
       );
       return proxyResData;
     },
-    parseReqBody,
+    parseBody: false,
   };
 
   app.use(route, ...middlewares, proxy(target, proxyOptions));

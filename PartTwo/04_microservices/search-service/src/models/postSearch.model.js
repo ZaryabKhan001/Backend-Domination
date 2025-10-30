@@ -10,7 +10,6 @@ const postSearchSchema = new Schema(
     userId: {
       type: String,
       required: true,
-      unique: true,
     },
     content: {
       type: String,
