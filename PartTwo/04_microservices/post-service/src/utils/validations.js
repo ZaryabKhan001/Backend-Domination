@@ -2,7 +2,7 @@ import Joi from 'joi';
 
 export const validateCreatePost = (data) => {
   const schema = Joi.object({
-    content: Joi.string().min(3).max(30).required(),
+    content: Joi.string().min(3).max(200).required(),
     mediaIds: Joi.array(),
   });
 

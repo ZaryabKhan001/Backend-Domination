@@ -8,6 +8,7 @@ import postSearchRouter from './routes/postSearch.route.js';
 import { dbConnect } from './database/dbConnect.js';
 import { connectRabbitMQ, consumeEvent } from './utils/rabbitmq.js';
 import { handleCreatePost, handleDeletePost } from './events/post.events.js';
+import { es } from './config/es.config.js';
 
 dotenv.config();
 
@@ -54,6 +55,16 @@ const startServer = async () => {
   }
 };
 startServer();
+
+const checkConnection = async () => {
+  try {
+    const health = await es.cluster.health();
+    console.log('Elasticsearch cluster is up:', health);
+  } catch (error) {
+    console.error('Error connecting to Elasticsearch:', error);
+  }
+};
+checkConnection();
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error(
