@@ -51,8 +51,12 @@ export const handleSearchPost = async (req, res) => {
     const from = (page - 1) * limit;
 
     const esQuery = {
-      match: {
-        content: query,
+      bool: {
+        should: [
+          { match_phrase: { content: { query, boost: 2 } } },
+          { match: { content: { query, fuzziness: 'AUTO' } } },
+        ],
+        minimum_should_match: 1,
       },
     };
 
