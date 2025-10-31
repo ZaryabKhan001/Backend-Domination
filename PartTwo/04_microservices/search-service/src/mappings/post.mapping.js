@@ -28,22 +28,15 @@ export const postMapping = {
   },
   mappings: {
     properties: {
-      postId: {
-        type: 'keyword',
-      },
-      userId: {
-        type: 'keyword',
-      },
+      postId: { type: 'keyword' },
+      userId: { type: 'keyword' },
       content: {
         type: 'text',
-        analyzer: 'standard',
+        analyzer: 'edge_ngram_analyzer',
+        search_analyzer: 'synonym_analyzer',
       },
-      createdAt: {
-        type: 'date',
-      },
-      updatedAt: {
-        type: 'date',
-      },
+      createdAt: { type: 'date' },
+      updatedAt: { type: 'date' },
     },
   },
 };
