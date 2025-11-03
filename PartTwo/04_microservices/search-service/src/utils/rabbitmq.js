@@ -73,6 +73,8 @@ export const consumeEvent = async (queueName, routingKey, callback) => {
   await channel.assertQueue(queueName, { durable: true });
   await channel.bindQueue(queueName, EXCHANGE_NAME, routingKey);
 
+  await channel.prefetch(50); // 50 requests at a time
+
   channel.consume(queueName, async (msg) => {
     if (msg !== null) {
       const content = JSON.parse(msg.content.toString());
