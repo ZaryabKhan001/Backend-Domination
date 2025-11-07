@@ -7,6 +7,8 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -22,6 +24,8 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 30s
@@ -31,6 +35,28 @@ services:
     networks:
       - microservices-net
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL http://elasticsearch:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - microservices-net
+
+  # --- API Gateway ---
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
@@ -54,7 +80,6 @@ services:
     env_file:
       - ./identity-service/.env
     depends_on:
-      - api-gateway
       - redis
       - rabbitmq
     environment:
@@ -72,7 +97,6 @@ services:
     env_file:
       - ./post-service/.env
     depends_on:
-      - api-gateway
       - redis
       - rabbitmq
     environment:
@@ -90,7 +114,6 @@ services:
     env_file:
       - ./media-service/.env
     depends_on:
-      - api-gateway
       - redis
       - rabbitmq
     environment:
@@ -108,12 +131,15 @@ services:
     env_file:
       - ./search-service/.env
     depends_on:
-      - api-gateway
       - redis
       - rabbitmq
+      - elasticsearch
     environment:
       - REDIS_URL=redis://redis:6379
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     restart: unless-stopped
     networks:
       - microservices-net
@@ -121,3 +147,8 @@ services:
 networks:
   microservices-net:
     driver: bridge
+
+volumes:
+  redis-data:
+  rabbitmq-data:
+  elasticsearch-data:
