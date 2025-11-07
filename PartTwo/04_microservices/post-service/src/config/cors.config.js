@@ -1,6 +1,6 @@
 import cors from 'cors';
 
-export const corsconfig = () => {
+export const corsConfig = () => {
   return cors({
     origin: (origin, callback) => {
       const allowedOrigins = [
