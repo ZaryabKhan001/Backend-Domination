@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { logger } from './utils/logger.js';
-import { corsConfig } from '../../identity-service/src/config/cors.config.js';
+import { corsConfig } from './config/cors.config.js';
 import { dbConnect } from './database/dbConnect.js';
 import helmet from 'helmet';
 import { globalErrorHandler } from './middlewares/errorHandler.middleware.js';
