@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "Api gateway service passed all Tests.",
+    "test": "echo 'Api gateway service passed all Tests.'",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },

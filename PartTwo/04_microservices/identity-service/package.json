@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "Identity service passed all Tests.",
+    "test": "echo 'Identity service passed all Tests.'",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },

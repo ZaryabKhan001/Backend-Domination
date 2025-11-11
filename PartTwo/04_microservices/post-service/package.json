@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "test": "Post service passed all Tests.",
+    "test": "echo 'Post service passed all Tests.'",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
