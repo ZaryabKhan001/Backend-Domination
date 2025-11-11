@@ -9,9 +9,11 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout code
+      # 1️⃣ Checkout code with full history
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -28,19 +30,20 @@ jobs:
       - name: Detect changed services
         id: changes
         run: |
-          echo "CHANGED_SERVICES="
+          echo "Changed services:"
+          > changed_services.txt
           for dir in api-gateway identity-service post-service media-service search-service; do
-            if git diff --name-only HEAD~1 HEAD | grep "^PartTwo/04_microservices/$dir/"; then
-              echo "$dir "
+            if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^PartTwo/04_microservices/$dir/" >/dev/null; then
+              echo "$dir"
               echo "$dir" >> changed_services.txt
             fi
           done
-          echo "::set-output name=services::$(cat changed_services.txt || true)"
+          echo "CHANGED_SERVICES=$(cat changed_services.txt || true)" >> $GITHUB_ENV
 
-      # 5️⃣ Create minimal .env files for CI
+      # 5️⃣ Create minimal .env files for changed services
       - name: Create env files for CI
         run: |
-          for service in $(cat changed_services.txt); do
+          for service in $CHANGED_SERVICES; do
             mkdir -p ./PartTwo/04_microservices/$service
             case $service in
               api-gateway)
@@ -63,7 +66,7 @@ jobs:
       # 6️⃣ Build only changed services
       - name: Build Docker Images
         run: |
-          for service in $(cat changed_services.txt); do
+          for service in $CHANGED_SERVICES; do
             docker-compose build $service
           done
         working-directory: ./PartTwo/04_microservices
@@ -71,7 +74,7 @@ jobs:
       # 7️⃣ Test only changed services
       - name: Test changed services
         run: |
-          for service in $(cat changed_services.txt); do
+          for service in $CHANGED_SERVICES; do
             docker-compose run --rm $service npm test
           done
         working-directory: ./PartTwo/04_microservices
@@ -86,7 +89,7 @@ jobs:
       # 9️⃣ Push only changed services
       - name: Push Docker Images
         run: |
-          for service in $(cat changed_services.txt); do
+          for service in $CHANGED_SERVICES; do
             docker-compose push $service
           done
         working-directory: ./PartTwo/04_microservices
