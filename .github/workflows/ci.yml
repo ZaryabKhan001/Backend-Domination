@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0   # fetch all commits
 
       # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -38,9 +38,10 @@ jobs:
               echo "$dir" >> changed_services.txt
             fi
           done
+          # Save changed services to GITHUB_ENV
           echo "CHANGED_SERVICES=$(cat changed_services.txt || true)" >> $GITHUB_ENV
 
-      # 5️⃣ Create minimal .env files for changed services
+      # 5️⃣ Create minimal .env files for CI
       - name: Create env files for CI
         run: |
           for service in $CHANGED_SERVICES; do
@@ -62,22 +63,33 @@ jobs:
                 ;;
             esac
           done
+        shell: bash
 
       # 6️⃣ Build only changed services
       - name: Build Docker Images
         run: |
-          for service in $CHANGED_SERVICES; do
-            docker-compose build $service
-          done
+          if [ -s changed_services.txt ]; then
+            for service in $CHANGED_SERVICES; do
+              docker-compose build $service
+            done
+          else
+            echo "No changed services to build"
+          fi
         working-directory: ./PartTwo/04_microservices
+        shell: bash
 
       # 7️⃣ Test only changed services
       - name: Test changed services
         run: |
-          for service in $CHANGED_SERVICES; do
-            docker-compose run --rm $service npm test
-          done
+          if [ -s changed_services.txt ]; then
+            for service in $CHANGED_SERVICES; do
+              docker-compose run --rm $service npm test
+            done
+          else
+            echo "No changed services to test"
+          fi
         working-directory: ./PartTwo/04_microservices
+        shell: bash
 
       # 8️⃣ Login to Docker Hub
       - name: Login to Docker Hub
@@ -89,7 +101,12 @@ jobs:
       # 9️⃣ Push only changed services
       - name: Push Docker Images
         run: |
-          for service in $CHANGED_SERVICES; do
-            docker-compose push $service
-          done
+          if [ -s changed_services.txt ]; then
+            for service in $CHANGED_SERVICES; do
+              docker-compose push $service
+            done
+          else
+            echo "No changed services to push"
+          fi
         working-directory: ./PartTwo/04_microservices
+        shell: bash
