@@ -84,17 +84,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # 8️⃣ Push Docker images
-      - name: Push Images
-        run: |
-          docker tag api-gateway:latest ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
-          docker tag identity-service:latest ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
-          docker tag post-service:latest ${{ secrets.DOCKER_USERNAME }}/post-service:latest
-          docker tag media-service:latest ${{ secrets.DOCKER_USERNAME }}/media-service:latest
-          docker tag search-service:latest ${{ secrets.DOCKER_USERNAME }}/search-service:latest
-
-          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/identity-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/post-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/media-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/search-service:latest
+      - name: Push Docker images
+        run: docker-compose push
         working-directory: ./PartTwo/04_microservices
+
