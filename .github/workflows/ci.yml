@@ -1,4 +1,4 @@
-name: Microservices CI
+name: Microservices CI/CD
 
 on:
   push:
@@ -8,12 +8,13 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
     steps:
-      # 1️⃣ Checkout code with full history
+      # 1️⃣ Checkout code with full history to detect changes
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # fetch all commits
+          fetch-depth: 2
 
       # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -30,64 +31,69 @@ jobs:
       - name: Detect changed services
         id: changes
         run: |
-          echo "Changed services:"
+          echo "Detecting changed services..."
           > changed_services.txt
-          for dir in api-gateway identity-service post-service media-service search-service; do
-            if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^PartTwo/04_microservices/$dir/" >/dev/null; then
-              echo "$dir"
-              echo "$dir" >> changed_services.txt
+          for service in api-gateway identity-service post-service media-service search-service; do
+            if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "^PartTwo/04_microservices/$service/" >/dev/null; then
+              echo "$service" >> changed_services.txt
             fi
           done
-          # Save changed services to GITHUB_ENV
-          echo "CHANGED_SERVICES=$(cat changed_services.txt || true)" >> $GITHUB_ENV
 
-      # 5️⃣ Create minimal .env files for CI
-      - name: Create env files for CI
+          if [ -s changed_services.txt ]; then
+            echo "Changed services detected:"
+            cat changed_services.txt
+            echo "CHANGED_SERVICES=$(paste -sd ',' changed_services.txt)" >> $GITHUB_ENV
+          else
+            echo "No changed services detected"
+            echo "CHANGED_SERVICES=" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      # 5️⃣ Create minimal .env files for changed services
+      - name: Create env files for changed services
+        if: ${{ env.CHANGED_SERVICES != '' }}
         run: |
-          for service in $CHANGED_SERVICES; do
+          for service in $(echo $CHANGED_SERVICES | tr ',' ' '); do
             mkdir -p ./PartTwo/04_microservices/$service
             case $service in
               api-gateway)
-                echo "REDIS_URL=redis://redis:6379" > ./PartTwo/04_microservices/api-gateway/.env
+                echo "REDIS_URL=redis://redis:6379" > ./PartTwo/04_microservices/$service/.env
                 ;;
               identity-service|post-service|media-service)
                 echo "REDIS_URL=redis://redis:6379" > ./PartTwo/04_microservices/$service/.env
                 echo "RABBITMQ_URL=amqp://rabbitmq:5672" >> ./PartTwo/04_microservices/$service/.env
                 ;;
               search-service)
-                echo "REDIS_URL=redis://redis:6379" > ./PartTwo/04_microservices/search-service/.env
-                echo "RABBITMQ_URL=amqp://rabbitmq:5672" >> ./PartTwo/04_microservices/search-service/.env
-                echo "ELASTICSEARCH_URL=http://elasticsearch:9200" >> ./PartTwo/04_microservices/search-service/.env
-                echo "ELASTIC_USERNAME=elastic" >> ./PartTwo/04_microservices/search-service/.env
-                echo "ELASTIC_PASSWORD=${{ secrets.ELASTIC_PASSWORD }}" >> ./PartTwo/04_microservices/search-service/.env
+                echo "REDIS_URL=redis://redis:6379" > ./PartTwo/04_microservices/$service/.env
+                echo "RABBITMQ_URL=amqp://rabbitmq:5672" >> ./PartTwo/04_microservices/$service/.env
+                echo "ELASTICSEARCH_URL=http://elasticsearch:9200" >> ./PartTwo/04_microservices/$service/.env
+                echo "ELASTIC_USERNAME=elastic" >> ./PartTwo/04_microservices/$service/.env
+                echo "ELASTIC_PASSWORD=${{ secrets.ELASTIC_PASSWORD }}" >> ./PartTwo/04_microservices/$service/.env
                 ;;
             esac
           done
-        shell: bash
-
-      # 6️⃣ Build only changed services
-      - name: Build Docker Images
-        run: |
-          if [ -s changed_services.txt ]; then
-            for service in $CHANGED_SERVICES; do
-              docker-compose build $service
-            done
-          else
-            echo "No changed services to build"
-          fi
         working-directory: ./PartTwo/04_microservices
         shell: bash
 
-      # 7️⃣ Test only changed services
-      - name: Test changed services
+      # 6️⃣ Build Docker images for changed services
+      - name: Build Docker images
+        if: ${{ env.CHANGED_SERVICES != '' }}
         run: |
-          if [ -s changed_services.txt ]; then
-            for service in $CHANGED_SERVICES; do
-              docker-compose run --rm $service npm test
-            done
-          else
-            echo "No changed services to test"
-          fi
+          for service in $(echo $CHANGED_SERVICES | tr ',' ' '); do
+            echo "Building $service..."
+            docker-compose build $service
+          done
+        working-directory: ./PartTwo/04_microservices
+        shell: bash
+
+      # 7️⃣ Run tests for changed services
+      - name: Test Docker services
+        if: ${{ env.CHANGED_SERVICES != '' }}
+        run: |
+          for service in $(echo $CHANGED_SERVICES | tr ',' ' '); do
+            echo "Testing $service..."
+            docker-compose run --rm $service npm test
+          done
         working-directory: ./PartTwo/04_microservices
         shell: bash
 
@@ -98,15 +104,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 9️⃣ Push only changed services
-      - name: Push Docker Images
+      # 9️⃣ Push Docker images for changed services
+      - name: Push Docker images
+        if: ${{ env.CHANGED_SERVICES != '' }}
         run: |
-          if [ -s changed_services.txt ]; then
-            for service in $CHANGED_SERVICES; do
-              docker-compose push $service
-            done
-          else
-            echo "No changed services to push"
-          fi
+          for service in $(echo $CHANGED_SERVICES | tr ',' ' '); do
+            echo "Pushing $service..."
+            docker-compose push $service
+          done
         working-directory: ./PartTwo/04_microservices
         shell: bash
