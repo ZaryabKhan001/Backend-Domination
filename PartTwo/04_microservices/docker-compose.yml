@@ -56,95 +56,108 @@ services:
     networks:
       - microservices-net
 
-  # --- API Gateway ---
   api-gateway:
     build: ./api-gateway
-    image: zaryab001/api-gateway:latest
+    image: ${DOCKER_USERNAME}/api-gateway:latest
     container_name: api-gateway
     ports:
       - "3000:3000"
-    env_file:
-      - ./api-gateway/.env
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - JWT_SECRET=${API_GATEWAY_JWT_SECRET}
+      - REDIS_URL=${REDIS_URL}
+      - IDENTITY_SERVICE_URL=http://identity-service:3001
+      - POST_SERVICE_URL=http://post-service:3002
+      - MEDIA_SERVICE_URL=http://media-service:3003
+      - SEARCH_SERVICE_URL=http://search-service:3004
     depends_on:
       - redis
-    environment:
-      - REDIS_URL=redis://redis:6379
     restart: unless-stopped
     networks:
       - microservices-net
-  
+
   identity-service:
     build: ./identity-service
-    image: zaryab001/identity-service:latest
+    image: ${DOCKER_USERNAME}/identity-service:latest
     container_name: identity-service
     ports:
       - "3001:3001"
-    env_file:
-      - ./identity-service/.env
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - JWT_SECRET=${IDENTITY_SERVICE_JWT_SECRET}
+      - MONGODB_URI=${IDENTITY_SERVICE_MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
     depends_on:
       - redis
-      - rabbitmq
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-    restart: unless-stopped
     networks:
       - microservices-net
-  
+
   post-service:
     build: ./post-service
-    image: zaryab001/post-service:latest
+    image: ${DOCKER_USERNAME}/post-service:latest
     container_name: post-service
     ports:
       - "3002:3002"
-    env_file:
-      - ./post-service/.env
+    environment:
+      - PORT=3002
+      - NODE_ENV=development
+      - JWT_SECRET=${POST_SERVICE_JWT_SECRET}
+      - MONGODB_URI=${POST_SERVICE_MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+    restart: unless-stopped
     depends_on:
       - redis
       - rabbitmq
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-    restart: unless-stopped
     networks:
       - microservices-net
-  
+
   media-service:
     build: ./media-service
-    image: zaryab001/media-service:latest
+    image: ${DOCKER_USERNAME}/media-service:latest
     container_name: media-service
     ports:
       - "3003:3003"
-    env_file:
-      - ./media-service/.env
+    environment:
+      - PORT=3003
+      - NODE_ENV=development
+      - JWT_SECRET=${MEDIA_SERVICE_JWT_SECRET}
+      - MONGODB_URI=${MEDIA_SERVICE_MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - CLOUDINARY_CLOUD_NAME=${MEDIA_SERVICE_CLOUDINARY_NAME}
+      - CLOUDINARY_API_KEY=${MEDIA_SERVICE_CLOUDINARY_KEY}
+      - CLOUDINARY_API_SECRET=${MEDIA_SERVICE_CLOUDINARY_SECRET}
     depends_on:
       - redis
       - rabbitmq
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://rabbitmq:5672
     restart: unless-stopped
     networks:
       - microservices-net
-  
+
   search-service:
     build: ./search-service
-    image: zaryab001/search-service:latest
+    image: ${DOCKER_USERNAME}/search-service:latest
     container_name: search-service
     ports:
       - "3004:3004"
-    env_file:
-      - ./search-service/.env
+    environment:
+      - PORT=3004
+      - NODE_ENV=development
+      - JWT_SECRET=${SEARCH_SERVICE_JWT_SECRET}
+      - MONGODB_URI=${SEARCH_SERVICE_MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     depends_on:
       - redis
       - rabbitmq
       - elasticsearch
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - ELASTIC_USERNAME=elastic
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     restart: unless-stopped
     networks:
       - microservices-net
