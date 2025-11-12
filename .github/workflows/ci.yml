@@ -20,6 +20,8 @@ jobs:
       # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Full history for proper git diff
 
       # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -38,8 +40,9 @@ jobs:
         run: |
           CHANGED=""
           SERVICES="api-gateway identity-service post-service media-service search-service"
+          # Compare current branch with main
           for service in $SERVICES; do
-            if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "PartTwo/04_microservices/$service/" >/dev/null; then
+            if git diff --name-only origin/main...HEAD | grep "PartTwo/04_microservices/$service/" >/dev/null; then
               CHANGED="$CHANGED $service"
             fi
           done
@@ -76,20 +79,20 @@ jobs:
         run: |
           cd PartTwo/04_microservices
 
-          # Start dependencies once
+          # Start core dependencies
           docker-compose up -d redis rabbitmq elasticsearch || true
+
+          # Prepare common envs for all services
+          COMMON_ENVS="-e REDIS_URL=$REDIS_URL -e RABBITMQ_URL=$RABBITMQ_URL -e ELASTICSEARCH_URL=$ELASTICSEARCH_URL -e ELASTIC_USERNAME=$ELASTIC_USERNAME -e ELASTIC_PASSWORD=$ELASTIC_PASSWORD"
 
           for service in $changed_services; do
             echo "==== Building $service ===="
             docker-compose build $service
 
             echo "==== Testing $service ===="
-            # Prepare common envs for all services
-            ENV_ARGS="-e REDIS_URL=$REDIS_URL -e RABBITMQ_URL=$RABBITMQ_URL -e ELASTICSEARCH_URL=$ELASTICSEARCH_URL -e ELASTIC_USERNAME=$ELASTIC_USERNAME -e ELASTIC_PASSWORD=$ELASTIC_PASSWORD"
-
             case $service in
               api-gateway)
-                docker-compose run --rm --no-deps $ENV_ARGS \
+                docker-compose run --rm --no-deps $COMMON_ENVS \
                   -e JWT_SECRET=$API_GATEWAY_JWT_SECRET \
                   -e IDENTITY_SERVICE_URL=http://identity-service:3001 \
                   -e POST_SERVICE_URL=http://post-service:3002 \
@@ -98,19 +101,19 @@ jobs:
                   $service npm test
                 ;;
               identity-service)
-                docker-compose run --rm --no-deps $ENV_ARGS \
+                docker-compose run --rm --no-deps $COMMON_ENVS \
                   -e JWT_SECRET=$IDENTITY_SERVICE_JWT_SECRET \
                   -e MONGODB_URI=$IDENTITY_SERVICE_MONGO_URI \
                   $service npm test
                 ;;
               post-service)
-                docker-compose run --rm --no-deps $ENV_ARGS \
+                docker-compose run --rm --no-deps $COMMON_ENVS \
                   -e JWT_SECRET=$POST_SERVICE_JWT_SECRET \
                   -e MONGODB_URI=$POST_SERVICE_MONGO_URI \
                   $service npm test
                 ;;
               media-service)
-                docker-compose run --rm --no-deps $ENV_ARGS \
+                docker-compose run --rm --no-deps $COMMON_ENVS \
                   -e JWT_SECRET=$MEDIA_SERVICE_JWT_SECRET \
                   -e MONGODB_URI=$MEDIA_SERVICE_MONGO_URI \
                   -e CLOUDINARY_CLOUD_NAME=$MEDIA_SERVICE_CLOUDINARY_NAME \
@@ -119,7 +122,7 @@ jobs:
                   $service npm test
                 ;;
               search-service)
-                docker-compose run --rm --no-deps $ENV_ARGS \
+                docker-compose run --rm --no-deps $COMMON_ENVS \
                   -e JWT_SECRET=$SEARCH_SERVICE_JWT_SECRET \
                   -e MONGODB_URI=$SEARCH_SERVICE_MONGO_URI \
                   $service npm test
@@ -130,4 +133,5 @@ jobs:
             docker-compose push $service
           done
 
+          # Shutdown dependencies
           docker-compose down
